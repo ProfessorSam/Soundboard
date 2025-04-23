@@ -27,7 +27,7 @@ tasks.compileJava {
 }
 
 application {
-    mainClass = "com.github.professorSam.soundboard.SoundBoard"
+    mainClass = "de.professorsam.soundboard.SoundBoard"
 }
 
 tasks.withType(JavaExec::class) {

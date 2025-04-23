@@ -148,7 +148,7 @@
 <div id="board" class="soundboard">
     @for (int i = 1; i <= 12; i++)
         <button class="sound" data-id="${i}">
-            Sound ${i}
+            ${de.professorsam.soundboard.SoundBoard.getInstance().idToTag(i)}
             <div class="cooldown-overlay">Wait…</div>
         </button>
     @endfor
