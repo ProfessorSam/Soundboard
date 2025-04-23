@@ -8,8 +8,6 @@ import io.javalin.rendering.template.JavalinJte;
 
 import java.nio.file.Path;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -30,50 +28,16 @@ public class SoundBoard {
 
     public void start() {
         instance = this;
-        JavalinJte.init(createTemplateEngine(true));
-        Javalin server = Javalin.create().start(8000);
-        server.get("/", ctx -> {
-            long cooldown = defaultCooldown;
-            if(ctx.cookieStore().get("id") != null){
-                String id = ctx.cookieStore().get("id");
-                UUID uuid;
-                try {
-                    uuid = UUID.fromString(id);
-                } catch (IllegalArgumentException e) {
-                    uuid = UUID.randomUUID();
-                    ctx.cookieStore().set("id", uuid.toString());
-                    user.put(uuid, Instant.now());
-                    ctx.render("soundboard.jte", Collections.singletonMap("context", new SoundBoardContext((int) cooldown)));
-                    return;
-                }
-                Instant lastPlayed = user.get(uuid);
-                if(lastPlayed == null){
-                    user.put(uuid, Instant.now());
-                    ctx.render("soundboard.jte", Collections.singletonMap("context", new SoundBoardContext((int) cooldown)));
-                    return;
-                }
-                lastPlayed = lastPlayed.plus(defaultCooldown, ChronoUnit.SECONDS);
-                Instant now = Instant.now();
-                if(now.isBefore(lastPlayed)){
-                    cooldown = lastPlayed.getEpochSecond() - now.getEpochSecond();
-                } else {
-                    cooldown = 0;
-                }
-            } else {
-                UUID uuid = UUID.randomUUID();
-                user.put(uuid, Instant.now());
-                ctx.cookieStore().set("id", uuid.toString());
-            }
-            ctx.render("soundboard.jte", Collections.singletonMap("context", new SoundBoardContext((int) cooldown)));
+        Javalin server = Javalin.create(javalinConfig -> {
+            JavalinJte jte = new JavalinJte(createTemplateEngine(true));
+            javalinConfig.fileRenderer(jte);
         });
+        server.get("/", new SoundBoardHandler());
         for(int i = 1; i <= 12; i++) {
             logger.info("register sound " + i);
             server.post("/api/sound/" + i, new SoundCallHandler(i));
         }
-    }
-
-    public void playSound(int id) {
-        logger.info("Play sound " + id);
+        server.start(8000);
     }
 
     private TemplateEngine createTemplateEngine(boolean isDevSystem) {
@@ -83,6 +47,10 @@ public class SoundBoard {
         } else {
             return TemplateEngine.createPrecompiled(ContentType.Html);
         }
+    }
+
+    public void playSound(int id) {
+        logger.info("Play sound " + id);
     }
 
     public Map<UUID, Instant> getUser() {
