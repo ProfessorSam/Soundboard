@@ -17,18 +17,23 @@ import java.util.logging.Logger;
 
 public class SoundBoard {
 
+    private static SoundBoard instance;
+
     private final Map<UUID, Instant> user = new HashMap<>();
     private final Logger logger = Logger.getLogger("Soundboard");
+
+    private int defaultCooldown = 5;
 
     public static void main(String[] args) {
         new SoundBoard().start();
     }
 
     public void start() {
+        instance = this;
         JavalinJte.init(createTemplateEngine(true));
         Javalin server = Javalin.create().start(8000);
         server.get("/", ctx -> {
-            long cooldown = 60;
+            long cooldown = defaultCooldown;
             if(ctx.cookieStore().get("id") != null){
                 String id = ctx.cookieStore().get("id");
                 UUID uuid;
@@ -47,7 +52,7 @@ public class SoundBoard {
                     ctx.render("soundboard.jte", Collections.singletonMap("context", new SoundBoardContext((int) cooldown)));
                     return;
                 }
-                lastPlayed = lastPlayed.plus(60, ChronoUnit.SECONDS);
+                lastPlayed = lastPlayed.plus(defaultCooldown, ChronoUnit.SECONDS);
                 Instant now = Instant.now();
                 if(now.isBefore(lastPlayed)){
                     cooldown = lastPlayed.getEpochSecond() - now.getEpochSecond();
@@ -67,6 +72,10 @@ public class SoundBoard {
         }
     }
 
+    public void playSound(int id) {
+        logger.info("Play sound " + id);
+    }
+
     private TemplateEngine createTemplateEngine(boolean isDevSystem) {
         if (isDevSystem) {
             DirectoryCodeResolver codeResolver = new DirectoryCodeResolver(Path.of("Server","src", "main", "jte"));
@@ -74,5 +83,17 @@ public class SoundBoard {
         } else {
             return TemplateEngine.createPrecompiled(ContentType.Html);
         }
+    }
+
+    public Map<UUID, Instant> getUser() {
+        return user;
+    }
+
+    public static SoundBoard getInstance() {
+        return instance;
+    }
+
+    public int getDefaultCooldown() {
+        return defaultCooldown;
     }
 }

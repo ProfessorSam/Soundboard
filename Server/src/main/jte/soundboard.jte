@@ -205,7 +205,8 @@
             fetch("/api/sound/" + id, {
                 method: 'POST'
             }).then(() => {
-                setCooldown(60);
+                board.classList.add('cooling');
+                window.location.reload(true);
             }).catch(err => console.error('Error:', err));
 
             if (navigator.vibrate) {
@@ -221,8 +222,16 @@
     }
 
     function toggleDarkMode() {
-        document.body.classList.toggle('dark');
+        const isDark = document.body.classList.toggle('dark');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
     }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark');
+        }
+    });
 </script>
 </body>
 </html>
