@@ -1,0 +1,5 @@
+services:
+  soundboard:
+    image: ghcr.io/professorsam/soundboard:v1.0
+    ports:
+      - "80:8000"
